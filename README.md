@@ -11,13 +11,13 @@ LinguaHub is an optimized, single-page web application designed to centralize la
 
 This application was engineered using an AI-assisted development workflow (Gemini AI Studio) and optimized for deployment speed, showcasing technical proficiency in core web technologies.
 
-| Aspect | Details | CSE/AIML Significance |
-| :--- | :--- | :--- |
-| **Architecture** | **Single-File Implementation:** The entire app (HTML, CSS, and JavaScript logic) is contained within one standalone file (`LinguaHub.html`), eliminating complex build steps and showcasing optimization. | Demonstrates understanding of browser runtime environments and dependency management. |
-| **AI Integration** | **Gemini 2.5 Flash API:** Utilizes direct **REST API (`fetch()`) calls** to the Gemini endpoint for stateless, real-time AI services. | Direct application of AI/ML services; avoids security risks associated with client-side SDKs. |
+| Aspect | Details |  
+| :--- | :--- |
+| **Architecture** | **Single-File Implementation:** The entire app (HTML, CSS, and JavaScript logic) is contained within one standalone file (`LinguaHub.html`), eliminating complex build steps and showcasing optimization. |
+| **AI Integration** | **Gemini 2.5 Flash API:** Utilizes direct **REST API (`fetch()`) calls** to the Gemini endpoint for stateless, real-time AI services. |
 | **Front-End Stack**| **Vanilla JavaScript (DOM Manipulation)**, Tailwind CSS, Lucide Icons. | Shows mastery of fundamental web technologies required for debugging complex framework issues. |
-| **Data/State** | **Local Storage Persistence:** Uses the browser's Local Storage to manage user sessions, task history, and analytics data. | Implements basic state management and data persistence without a dedicated external database. |
-| **Debugging & Optimization** | Successfully resolved critical runtime issues, including **Event Listener Failure** on dynamically injected components and mitigating **API Key exposure risks** for security. | Highlights problem-solving skills crucial in software engineering. |
+| **Data/State** | **Local Storage Persistence:** Uses the browser's Local Storage to manage user sessions, task history, and analytics data. |
+| **Debugging & Optimization** | Successfully resolved critical runtime issues, including **Event Listener Failure** on dynamically injected components and mitigating **API Key exposure risks** for security. |
 
 ### **3. Key Functional Features**
 

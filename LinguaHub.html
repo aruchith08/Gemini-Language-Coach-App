@@ -1,0 +1,868 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaHub - Language Learning Dashboard</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Crect%20x%3D'0'%20y%3D'0'%20width%3D'24'%20height%3D'24'%20rx%3D'5'%20fill%3D'%2310b981'%2F%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'16'%20height%3D'5'%20rx%3D'1'%20fill%3D'%23ffffff'%20%2F%3E%3Crect%20x%3D'4'%20y%3D'11'%20width%3D'6'%20height%3D'9'%20rx%3D'1'%20fill%3D'%23ffffff'%20%2F%3E%3Crect%20x%3D'12'%20y%3D'11'%20width%3D'8'%20height%3D'9'%20rx%3D'1'%20fill%3D'%23ffffff'%20%2F%3E%3C%2Fsvg%3E">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons (Vanilla JS version) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            slate: '#475569',
+                            blue: '#334155', 
+                            green: '#10b981',
+                            soft: '#f8fafc',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0"
+  }
+}
+</script>
+</head>
+<body class="bg-brand-soft text-brand-slate antialiased dark:bg-slate-900 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- HEADER -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-600 p-2 rounded-lg text-white shadow-lg shadow-emerald-600/20">
+                    <i data-lucide="layout" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-brand-blue dark:text-white">
+                    Lingua<span class="text-emerald-600">Hub</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-1 md:gap-3">
+                <button onclick="app.openAnalytics()" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2" title="Analytics">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i>
+                    <span class="hidden md:inline font-medium text-sm">Analytics</span>
+                </button>
+                <button onclick="app.openHistory()" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2" title="History">
+                    <i data-lucide="history" class="w-5 h-5"></i>
+                    <span class="hidden md:inline font-medium text-sm">History</span>
+                </button>
+                <button onclick="app.toggleDarkMode()" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                    <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+                </button>
+                
+                <!-- Auth Section -->
+                <div id="auth-section" class="ml-2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-12">
+        
+        <!-- DAILY TASK SECTION -->
+        <section class="fade-in">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="star" class="w-5 h-5 text-amber-500 fill-amber-500"></i>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-sm">Daily AI Tasks</h2>
+                </div>
+                <button onclick="app.generateTask()" class="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-3 py-1 rounded-lg">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> New Task
+                </button>
+            </div>
+
+            <div id="daily-task-container" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 shadow-sm">
+                <!-- Task Content Injected JS -->
+                <div class="flex items-center justify-center py-8">
+                    <i data-lucide="loader-2" class="w-8 h-8 text-emerald-500 animate-spin"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- CORE SKILLS -->
+        <section>
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="layers" class="w-5 h-5 text-emerald-600 dark:text-emerald-500"></i>
+                <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-sm">Core Skills</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="skills-grid">
+                <!-- Skills Injected via JS -->
+            </div>
+        </section>
+
+        <!-- PRACTICE PAPERS -->
+        <section class="bg-brand-blue dark:bg-slate-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-12 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+            <div class="relative z-10">
+                <h2 class="text-2xl font-bold mb-2">Mock Tests & Sample Papers</h2>
+                <p class="text-slate-300 dark:text-slate-400 mb-6 max-w-xl">
+                    Simulate exam conditions with free full-length tests from top providers.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="papers-grid">
+                    <!-- Papers Injected via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="max-w-6xl mx-auto px-6 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+        &copy; <span id="year"></span> LinguaHub. All rights reserved.
+    </footer>
+
+    <!-- MODALS (Hidden by default) -->
+    
+    <!-- Login Modal -->
+    <div id="login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="auth-title" class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i data-lucide="user" class="text-emerald-500 w-5 h-5"></i> User Login
+                </h3>
+                <button onclick="app.closeModal('login-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="app.handleAuthSubmit(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Username</label>
+                    <input type="text" id="auth-username" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Enter username">
+                    <p id="auth-error" class="text-xs text-red-500 mt-1 hidden"></p>
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors">Login</button>
+            </form>
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 text-center">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    <span id="auth-switch-text">Don't have an account?</span>
+                    <button onclick="app.toggleAuthMode()" class="ml-1 text-emerald-600 font-medium hover:underline" id="auth-switch-btn">Sign Up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Modal -->
+    <div id="skill-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-brand-blue dark:bg-slate-900 p-6 flex justify-between items-center text-white">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/10 p-2 rounded-lg" id="skill-modal-icon"></div>
+                    <h2 class="text-2xl font-bold" id="skill-modal-title"></h2>
+                </div>
+                <button onclick="app.closeModal('skill-modal')" class="p-1 hover:bg-white/20 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 space-y-4" id="skill-modal-content"></div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-brand-blue dark:bg-slate-900 p-6 flex justify-between items-center text-white border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/10 p-2 rounded-lg"><i data-lucide="clock" class="w-6 h-6"></i></div>
+                    <h2 class="text-xl font-bold">Task History</h2>
+                </div>
+                <button onclick="app.closeModal('history-modal')" class="p-1 hover:bg-white/20 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1" id="history-content">
+                <!-- History Items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div id="analytics-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-indigo-600 dark:bg-slate-900 p-6 flex justify-between items-center text-white">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+                    <h2 class="text-xl font-bold">Performance Analytics</h2>
+                </div>
+                <button onclick="app.closeModal('analytics-modal')" class="hover:bg-white/20 p-1 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6 flex-1" id="analytics-content">
+                <!-- Analytics Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CHAT WIDGET -->
+    <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+        <div id="chat-window" class="hidden mb-4 w-80 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col h-[500px]">
+            <div class="bg-brand-blue dark:bg-slate-900 text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <h3 class="font-semibold">Ask AI Assistant</h3>
+                </div>
+                <button onclick="app.toggleChat()" class="hover:bg-white/10 p-1 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900">
+                <div class="flex justify-start">
+                    <div class="bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-600 text-sm">
+                        Hi! I'm LinguaBot. Ask me anything about English grammar, vocabulary, or learning tips!
+                    </div>
+                </div>
+            </div>
+            <form onsubmit="app.handleChatSubmit(event)" class="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+                <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 dark:text-white border-0 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Ask a question...">
+                <button type="submit" class="bg-brand-blue dark:bg-slate-900 text-white p-2 rounded-xl hover:bg-emerald-600"><i data-lucide="send" class="w-4 h-4"></i></button>
+            </form>
+        </div>
+        <button onclick="app.toggleChat()" class="group flex items-center gap-2 bg-emerald-600 text-white px-5 py-4 rounded-full shadow-lg hover:bg-emerald-700 hover:scale-105 transition-all duration-300">
+            <i data-lucide="message-square" class="w-6 h-6"></i>
+            <span class="font-medium hidden sm:inline">Ask AI</span>
+        </button>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const API_KEY = "PASTE_KEY_HERE"; 
+
+        // ==========================================
+        // DATA CONSTANTS
+        // ==========================================
+        const SKILL_DATA = [
+            {
+                id: 'Listening',
+                title: 'Listening',
+                description: 'Improve comprehension through podcasts and audio.',
+                icon: 'headphones',
+                resources: [
+                    { name: 'British Council', url: 'https://learnenglish.britishcouncil.org/skills/listening' },
+                    { name: 'BBC Learning English', url: 'https://www.bbc.co.uk/learningenglish/english/features/6-minute-english' },
+                    { name: 'TED Talks (Education)', url: 'https://www.ted.com/topics/education' },
+                    { name: 'IELTS Liz', url: 'https://ieltsliz.com/ielts-listening/' },
+                ],
+            },
+            {
+                id: 'Reading',
+                title: 'Reading',
+                description: 'Enhance vocabulary and speed with diverse texts.',
+                icon: 'book-open',
+                resources: [
+                    { name: 'British Council', url: 'https://learnenglish.britishcouncil.org/skills/reading' },
+                    { name: 'Breaking News English', url: 'https://breakingnewsenglish.com/' },
+                    { name: 'Project Gutenberg', url: 'https://www.gutenberg.org/' },
+                    { name: 'UsingEnglish Comprehension', url: 'https://www.usingenglish.com/comprehension/' },
+                ],
+            },
+            {
+                id: 'Writing',
+                title: 'Writing',
+                description: 'Practice structure, grammar, and style.',
+                icon: 'pen-tool',
+                resources: [
+                    { name: 'Cambridge Write & Improve', url: 'https://writeandimprove.com/' },
+                    { name: 'Purdue OWL', url: 'https://owl.purdue.edu/owl/purdue_owl.html' },
+                    { name: 'Hemingway Editor', url: 'https://hemingwayapp.com/' },
+                    { name: 'IELTS Buddy Writing', url: 'https://www.ieltsbuddy.com/ielts-writing.html' },
+                ],
+            },
+            {
+                id: 'Speaking',
+                title: 'Speaking',
+                description: 'Build confidence in pronunciation and fluency.',
+                icon: 'mic',
+                resources: [
+                    { name: 'TalkEnglish', url: 'https://www.talkenglish.com/speaking/list-of-speaking-basics.aspx' },
+                    { name: 'Toastmasters Tips', url: 'https://www.toastmasters.org/resources/public-speaking-tips' },
+                    { name: 'IELTS Speaking Samples', url: 'https://ielts-up.com/speaking/ielts-speaking-samples.html' },
+                ],
+            },
+        ];
+
+        const DAILY_CHALLENGES = [
+            { id: '1', category: 'Vocabulary', type: 'Word of the Day', content: "Serendipity (n.) - The occurrence of events by chance in a happy or beneficial way.", requiresInput: false },
+            { id: '2', category: 'Grammar', type: 'Grammar Challenge', content: "Correct this: 'She don't like apples.'", requiresInput: true },
+            { id: '3', category: 'Idiom', type: 'Idiom of the Day', content: "Piece of cake - Something very easy to do.", requiresInput: false },
+            { id: '4', category: 'Listening', type: 'Listening Practice', content: "Listen to the audio and answer: What was the main reason the character was late?", hiddenContent: "I honestly didn't mean to be late. I left the house on time, but there was a massive traffic jam caused by a broken-down truck on the bridge. I sat there for forty-five minutes without moving an inch!", requiresInput: true },
+            { id: '5', category: 'Reading', type: 'Reading Comprehension', content: "Read the following sentence and explain the tone: 'The old house groaned under the weight of the storm, its windows rattling like chattering teeth.'", requiresInput: true },
+            { id: '6', category: 'Writing', type: 'Writing Prompt', content: "Write 2-3 sentences describing your favorite season and why you like it.", requiresInput: true },
+            { id: '7', category: 'Speaking', type: 'Speaking Drill', content: "Describe the room you are currently in. Focus on using prepositions (next to, behind, above). Type what you said.", requiresInput: true },
+            { id: '8', category: 'Grammar', type: 'Grammar Challenge', content: "Correct this: 'I look forward to meet you.'", requiresInput: true },
+        ];
+
+        // ==========================================
+        // APPLICATION LOGIC
+        // ==========================================
+
+        const app = {
+            state: {
+                username: null,
+                isSignUp: false,
+                darkMode: false,
+                currentTask: null,
+                feedback: null,
+                lastScore: null,
+                isPlayingAudio: false,
+                isChecking: false,
+                history: []
+            },
+
+            init() {
+                // Load Theme
+                const storedTheme = localStorage.getItem('theme');
+                if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    this.setDarkMode(true);
+                }
+
+                // Load User
+                this.state.username = localStorage.getItem('lingua_current_user');
+                this.loadHistory();
+                this.renderAuthSection();
+
+                // Load Initial Data
+                this.renderSkills();
+                this.renderPapers();
+                this.generateTask();
+                
+                // Footer Year
+                document.getElementById('year').textContent = new Date().getFullYear();
+                
+                // Refresh Icons
+                lucide.createIcons();
+            },
+
+            // --- THEME ---
+            toggleDarkMode() {
+                this.setDarkMode(!this.state.darkMode);
+            },
+            setDarkMode(isDark) {
+                this.state.darkMode = isDark;
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+                }
+                lucide.createIcons();
+            },
+
+            // --- AUTHENTICATION ---
+            openLogin() {
+                this.state.isSignUp = false;
+                document.getElementById('auth-error').classList.add('hidden');
+                document.getElementById('auth-username').value = '';
+                this.updateAuthModalUI();
+                this.openModal('login-modal');
+            },
+            toggleAuthMode() {
+                this.state.isSignUp = !this.state.isSignUp;
+                this.updateAuthModalUI();
+            },
+            updateAuthModalUI() {
+                const title = document.getElementById('auth-title');
+                const btn = document.getElementById('auth-submit-btn');
+                const switchText = document.getElementById('auth-switch-text');
+                const switchBtn = document.getElementById('auth-switch-btn');
+
+                if (this.state.isSignUp) {
+                    title.innerHTML = '<i data-lucide="user-plus" class="text-emerald-500 w-5 h-5 mr-2"></i> Create Account';
+                    btn.textContent = 'Create Account';
+                    switchText.textContent = 'Already have an account?';
+                    switchBtn.textContent = 'Login';
+                } else {
+                    title.innerHTML = '<i data-lucide="user" class="text-emerald-500 w-5 h-5 mr-2"></i> User Login';
+                    btn.textContent = 'Login';
+                    switchText.textContent = "Don't have an account?";
+                    switchBtn.textContent = 'Sign Up';
+                }
+                lucide.createIcons();
+            },
+            handleAuthSubmit(e) {
+                e.preventDefault();
+                const username = document.getElementById('auth-username').value.trim();
+                const errorEl = document.getElementById('auth-error');
+                
+                if (!username) return;
+
+                const userKey = `lingua_history_${username}`;
+                const userExists = localStorage.getItem(userKey) !== null;
+
+                if (this.state.isSignUp) {
+                    if (userExists) {
+                        errorEl.textContent = "Username already exists.";
+                        errorEl.classList.remove('hidden');
+                        return;
+                    }
+                    localStorage.setItem(userKey, JSON.stringify([]));
+                } else {
+                    if (!userExists) {
+                        errorEl.textContent = "Account not found.";
+                        errorEl.classList.remove('hidden');
+                        return;
+                    }
+                }
+
+                this.state.username = username;
+                localStorage.setItem('lingua_current_user', username);
+                this.loadHistory();
+                this.renderAuthSection();
+                this.closeModal('login-modal');
+            },
+            logout() {
+                this.state.username = null;
+                localStorage.removeItem('lingua_current_user');
+                this.loadHistory();
+                this.renderAuthSection();
+            },
+            renderAuthSection() {
+                const container = document.getElementById('auth-section');
+                if (this.state.username) {
+                    container.innerHTML = `
+                        <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                <span class="max-w-[100px] truncate">${this.state.username}</span>
+                            </div>
+                            <button onclick="app.logout()" class="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg" title="Logout">
+                                <i data-lucide="log-out" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <button onclick="app.openLogin()" class="flex items-center gap-2 px-4 py-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg hover:bg-slate-700 dark:hover:bg-white text-sm font-medium">
+                            <i data-lucide="log-in" class="w-4 h-4"></i> Login
+                        </button>
+                    `;
+                }
+                lucide.createIcons();
+            },
+
+            // --- HISTORY & DATA ---
+            loadHistory() {
+                const key = this.state.username ? `lingua_history_${this.state.username}` : 'lingua_history_guest';
+                try {
+                    this.state.history = JSON.parse(localStorage.getItem(key)) || [];
+                } catch(e) {
+                    this.state.history = [];
+                }
+            },
+            saveHistory() {
+                const key = this.state.username ? `lingua_history_${this.state.username}` : 'lingua_history_guest';
+                localStorage.setItem(key, JSON.stringify(this.state.history));
+            },
+
+            // --- DAILY TASK ---
+            generateTask() {
+                // If previous task wasn't done, skip it
+                if (this.state.currentTask && this.state.currentTask.requiresInput && !this.state.feedback) {
+                    this.state.history.unshift({
+                        ...this.state.currentTask,
+                        timestamp: new Date().toISOString(),
+                        status: 'skipped',
+                        score: 0
+                    });
+                    this.saveHistory();
+                }
+
+                const idx = Math.floor(Math.random() * DAILY_CHALLENGES.length);
+                this.state.currentTask = DAILY_CHALLENGES[idx];
+                this.state.feedback = null;
+                this.state.lastScore = null;
+                this.state.isPlayingAudio = false;
+                this.renderDailyTask();
+            },
+            renderDailyTask() {
+                const container = document.getElementById('daily-task-container');
+                const task = this.state.currentTask;
+                if (!task) return;
+
+                let html = `
+                    <div class="flex flex-col md:flex-row items-start gap-6">
+                        <div class="hidden md:flex flex-col items-center gap-2">
+                            <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-full shrink-0">
+                                <i data-lucide="${task.category === 'Listening' ? 'volume-2' : (task.category === 'Speaking' ? 'mic' : 'star')}" class="w-8 h-8 text-amber-500"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold uppercase tracking-wide">${task.category}</span>
+                                <span class="text-slate-400 text-sm">•</span>
+                                <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">${task.type}</span>
+                            </div>
+                            <h3 class="text-xl md:text-2xl font-serif text-slate-800 dark:text-slate-100 italic mb-4 leading-relaxed">"${task.content}"</h3>
+                `;
+
+                // Audio Button
+                if (task.category === 'Listening' && task.hiddenContent) {
+                    html += `
+                        <div class="mb-6">
+                            <button onclick="app.playAudio()" id="audio-btn" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> Play Audio Segment
+                            </button>
+                        </div>
+                    `;
+                }
+
+                // Input Area
+                if (task.requiresInput) {
+                    html += `
+                        <div class="w-full max-w-2xl bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <div class="flex flex-col gap-3">
+                                <label class="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                    ${task.category === 'Speaking' ? 'Transcription (What you said):' : 'Your Answer:'}
+                                </label>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                    `;
+                    
+                    if (task.category === 'Writing' || task.category === 'Speaking') {
+                        html += `<textarea id="task-input" class="flex-1 px-4 py-3 min-h-[100px] border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Type your response here..."></textarea>`;
+                    } else {
+                        html += `<input type="text" id="task-input" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Type your answer here...">`;
+                    }
+
+                    html += `
+                                    <button onclick="app.checkAnswer()" id="check-btn" class="bg-emerald-600 text-white px-6 py-2 h-fit rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center gap-2 self-end sm:self-auto">
+                                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Check
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="feedback-area" class="mt-4 hidden p-4 rounded-lg border text-sm leading-relaxed whitespace-pre-wrap"></div>
+                        </div>
+                    `;
+                }
+
+                html += `</div></div>`;
+                container.innerHTML = html;
+                lucide.createIcons();
+            },
+            playAudio() {
+                const task = this.state.currentTask;
+                if(!window.speechSynthesis || !task.hiddenContent) return;
+
+                if (this.state.isPlayingAudio) {
+                    window.speechSynthesis.cancel();
+                    this.state.isPlayingAudio = false;
+                    document.getElementById('audio-btn').classList.remove('animate-pulse', 'bg-amber-100', 'text-amber-700');
+                    document.getElementById('audio-btn').classList.add('bg-emerald-100', 'text-emerald-700');
+                    document.getElementById('audio-btn').innerHTML = '<i data-lucide="play-circle" class="w-4 h-4"></i> Play Audio Segment';
+                } else {
+                    const u = new SpeechSynthesisUtterance(task.hiddenContent);
+                    u.rate = 0.9;
+                    u.onend = () => {
+                        this.state.isPlayingAudio = false;
+                        document.getElementById('audio-btn').classList.remove('animate-pulse', 'bg-amber-100', 'text-amber-700');
+                        document.getElementById('audio-btn').classList.add('bg-emerald-100', 'text-emerald-700');
+                        document.getElementById('audio-btn').innerHTML = '<i data-lucide="play-circle" class="w-4 h-4"></i> Play Audio Segment';
+                        lucide.createIcons();
+                    };
+                    window.speechSynthesis.speak(u);
+                    this.state.isPlayingAudio = true;
+                    document.getElementById('audio-btn').classList.add('animate-pulse', 'bg-amber-100', 'text-amber-700');
+                    document.getElementById('audio-btn').classList.remove('bg-emerald-100', 'text-emerald-700');
+                    document.getElementById('audio-btn').innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Playing...';
+                }
+                lucide.createIcons();
+            },
+            async checkAnswer() {
+                const input = document.getElementById('task-input').value;
+                if (!input.trim() || this.state.isChecking) return;
+
+                this.state.isChecking = true;
+                const btn = document.getElementById('check-btn');
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Checking...';
+                lucide.createIcons();
+
+                const task = this.state.currentTask;
+                const prompt = `You are an English tutor. Evaluate this answer for the question: "${task.content}". 
+                ${task.hiddenContent ? `Context (User heard this): "${task.hiddenContent}"` : ''}
+                User Answer: "${input}"
+                Strict format: 
+                Score: [0-10]/10
+                Feedback: [Details]`;
+
+                const aiResponse = await this.callGemini(prompt);
+                
+                // Parse Score
+                const scoreMatch = aiResponse.match(/Score:\s*(\d+(\.\d+)?)\/10/i);
+                const score = scoreMatch ? parseFloat(scoreMatch[1]) : 0;
+                
+                this.state.feedback = aiResponse;
+                this.state.lastScore = score;
+                this.state.isChecking = false;
+
+                // Save to history
+                this.state.history.unshift({
+                    ...task,
+                    timestamp: new Date().toISOString(),
+                    status: 'completed',
+                    userAnswer: input,
+                    aiFeedback: aiResponse,
+                    score: score
+                });
+                this.saveHistory();
+
+                // UI Update
+                btn.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4"></i> Check';
+                const fbArea = document.getElementById('feedback-area');
+                fbArea.classList.remove('hidden');
+                fbArea.textContent = aiResponse;
+                if (score >= 7) {
+                    fbArea.className = "mt-4 p-4 rounded-lg border text-sm leading-relaxed whitespace-pre-wrap bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200";
+                } else {
+                    fbArea.className = "mt-4 p-4 rounded-lg border text-sm leading-relaxed whitespace-pre-wrap bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800 text-slate-800 dark:text-amber-100";
+                }
+                lucide.createIcons();
+            },
+
+            // --- UI RENDERERS ---
+            renderSkills() {
+                const container = document.getElementById('skills-grid');
+                container.innerHTML = SKILL_DATA.map(skill => `
+                    <button onclick="app.openSkillModal('${skill.id}')" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-emerald-200 dark:hover:border-emerald-700 hover:-translate-y-1 transition-all duration-300 text-left group h-full flex flex-col">
+                        <div class="mb-4 bg-slate-50 dark:bg-slate-700 w-fit p-3 rounded-xl group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 transition-colors">
+                            <i data-lucide="${skill.icon}" class="w-8 h-8 text-slate-600 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">${skill.title}</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-4 flex-grow">${skill.description}</p>
+                        <div class="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium mt-auto">
+                            Start Practice <i data-lucide="arrow-right" class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </button>
+                `).join('');
+            },
+            renderPapers() {
+                const papers = [
+                    { name: 'IELTS Online Tests', url: 'https://ieltsonlinetests.com/' },
+                    { name: 'Exam English', url: 'https://www.examenglish.com/' },
+                    { name: 'Cambridge English Prep', url: 'https://www.cambridgeenglish.org/learning-english/exam-preparation/' },
+                ];
+                document.getElementById('papers-grid').innerHTML = papers.map(p => `
+                    <a href="${p.url}" target="_blank" class="bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white hover:text-brand-blue dark:hover:text-slate-900 hover:border-white px-5 py-4 rounded-xl transition-all font-medium flex items-center justify-between group">
+                        ${p.name} <i data-lucide="external-link" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                    </a>
+                `).join('');
+            },
+
+            // --- MODALS ---
+            openModal(id) {
+                document.getElementById(id).classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+            closeModal(id) {
+                document.getElementById(id).classList.add('hidden');
+                document.body.style.overflow = 'unset';
+            },
+            openSkillModal(skillId) {
+                const skill = SKILL_DATA.find(s => s.id === skillId);
+                if (!skill) return;
+
+                document.getElementById('skill-modal-title').innerText = skill.title + ' Resources';
+                document.getElementById('skill-modal-icon').innerHTML = `<i data-lucide="${skill.icon}" class="w-6 h-6"></i>`;
+                
+                document.getElementById('skill-modal-content').innerHTML = `
+                    <p class="text-slate-600 dark:text-slate-300 mb-4 text-sm">Select a trusted source to practice your ${skill.title.toLowerCase()} skills:</p>
+                    <div class="grid gap-3">
+                        ${skill.resources.map(res => `
+                            <a href="${res.url}" target="_blank" class="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-500 hover:shadow-md transition-all group">
+                                <span class="font-medium text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">${res.name}</span>
+                                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 group-hover:text-emerald-500"></i>
+                            </a>
+                        `).join('')}
+                    </div>
+                `;
+                this.openModal('skill-modal');
+                lucide.createIcons();
+            },
+            openHistory() {
+                const container = document.getElementById('history-content');
+                if (this.state.history.length === 0) {
+                    container.innerHTML = `<p class="text-center text-slate-500 py-8">No history yet. Start a daily task!</p>`;
+                } else {
+                    container.innerHTML = this.state.history.map(item => `
+                        <div class="relative p-4 rounded-xl border transition-colors ${item.status === 'completed' ? 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700' : 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/50'}">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-md ${item.status === 'completed' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-100'}">${item.category}</span>
+                                    ${item.status === 'skipped' ? '<span class="text-xs text-amber-600 font-medium flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Incomplete</span>' : ''}
+                                </div>
+                                <span class="text-xs text-slate-400">${new Date(item.timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <p class="text-slate-800 dark:text-slate-200 font-medium italic mb-2">"${item.content}"</p>
+                            ${item.status === 'completed' ? 
+                                `<div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="check" class="w-3 h-3 text-emerald-500"></i> Completed • Score: ${item.score}/10</div>` : 
+                                ``
+                            }
+                        </div>
+                    `).join('');
+                }
+                this.openModal('history-modal');
+                lucide.createIcons();
+            },
+            async openAnalytics() {
+                this.openModal('analytics-modal');
+                const container = document.getElementById('analytics-content');
+                const completed = this.state.history.filter(h => h.status === 'completed');
+                
+                if (completed.length === 0) {
+                    container.innerHTML = `<p class="text-center text-slate-500 py-12">No data available yet. Complete some tasks!</p>`;
+                    return;
+                }
+
+                container.innerHTML = `<div class="flex justify-center"><i data-lucide="loader-2" class="w-8 h-8 text-indigo-500 animate-spin"></i></div>`;
+                lucide.createIcons();
+
+                // Stats
+                const total = completed.length;
+                const totalScore = completed.reduce((acc, curr) => acc + (curr.score || 0), 0);
+                const avgScore = (totalScore / total).toFixed(1);
+
+                // AI Report
+                const historySummary = completed.slice(0, 10).map(h => `- ${h.category}: ${h.score}/10`).join('\n');
+                const aiReport = await this.callGemini(`Analyze this performance history and give 3 bullet points of advice addressing the user as "you":\n${historySummary}`);
+
+                container.innerHTML = `
+                    <div class="mb-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4"></i> Analysis for: <span class="font-bold">${this.state.username || 'Guest'}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl text-center">
+                            <p class="text-slate-500 text-sm mb-1">Total Tasks</p>
+                            <p class="text-3xl font-bold text-slate-800 dark:text-white">${total}</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl text-center">
+                            <p class="text-slate-500 text-sm mb-1">Avg Score</p>
+                            <p class="text-3xl font-bold ${avgScore >= 7 ? 'text-emerald-500' : 'text-amber-500'}">${avgScore}<span class="text-base text-slate-400">/10</span></p>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                        <div class="flex items-center gap-2 mb-3 text-indigo-700 dark:text-indigo-300">
+                            <i data-lucide="star" class="w-4 h-4"></i><h3 class="font-bold">AI Coach Insights</h3>
+                        </div>
+                        <div class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">${aiReport}</div>
+                    </div>
+                `;
+                lucide.createIcons();
+            },
+
+            // --- CHAT ---
+            toggleChat() {
+                const win = document.getElementById('chat-window');
+                win.classList.toggle('hidden');
+                if (!win.classList.contains('hidden')) {
+                    // Scroll to bottom
+                    const msgContainer = document.getElementById('chat-messages');
+                    msgContainer.scrollTop = msgContainer.scrollHeight;
+                }
+            },
+            async handleChatSubmit(e) {
+                e.preventDefault();
+                const input = document.getElementById('chat-input');
+                const val = input.value.trim();
+                if (!val) return;
+
+                const container = document.getElementById('chat-messages');
+                
+                // Add User Message
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="flex justify-end">
+                        <div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-br-none shadow-sm text-sm max-w-[85%]">${val}</div>
+                    </div>
+                `);
+                input.value = '';
+                container.scrollTop = container.scrollHeight;
+
+                // Loading
+                const loadingId = 'loading-' + Date.now();
+                container.insertAdjacentHTML('beforeend', `
+                    <div id="${loadingId}" class="flex justify-start">
+                        <div class="bg-white dark:bg-slate-700 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-600">
+                            <i data-lucide="loader-2" class="w-4 h-4 text-emerald-500 animate-spin"></i>
+                        </div>
+                    </div>
+                `);
+                lucide.createIcons();
+                container.scrollTop = container.scrollHeight;
+
+                // Call AI
+                const response = await this.callGemini(val);
+                document.getElementById(loadingId).remove();
+                
+                // Add AI Message
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="flex justify-start">
+                        <div class="bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-600 text-sm max-w-[85%] leading-relaxed">
+                            ${response}
+                        </div>
+                    </div>
+                `);
+                container.scrollTop = container.scrollHeight;
+            },
+
+            // --- API ---
+            async callGemini(prompt) {
+                if (API_KEY === 'PASTE_KEY_HERE') return "⚠️ Please open index.html and add your Google Gemini API Key at the top of the script.";
+                
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.error) return "Error: " + data.error.message;
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    console.error(e);
+                    return "Sorry, I couldn't connect to the AI service.";
+                }
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => app.init());
+
+    </script>
+</body>
+</html>

@@ -35,4 +35,3 @@ This application was engineered using an AI-assisted development workflow (Gemin
 * **Floating Chatbot:** A persistent, collapsible **"Ask AI" assistant** (powered by Gemini) for instant grammar checks or vocabulary questions.
 * **Resource Aggregation:** Clicking any skill card opens a modal containing organized links to **external, high-quality, trusted learning resources** (e.g., BBC Learning English, British Council).
 * **Dark Mode:** Built-in toggle for switching between light and dark themes with session persistence.
-* **Mobile Optimized:** Responsive design with hidden scrollbars for a clean, application-like feel on mobile devices.

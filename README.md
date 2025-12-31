@@ -1,5 +1,7 @@
 ## LinguaHub: AI-Powered Language Learning Dashboard
 
+<img width="1905" height="1079" alt="image" src="https://github.com/user-attachments/assets/ee63274e-f58b-4266-80c8-f1fb5bfa15a7" />
+
 ### **1. Project Overview & Value Proposition**
 
 LinguaHub is an optimized, single-page web application designed to centralize language learning resources and provide real-time, personalized practice using Artificial Intelligence. The app serves as a full-featured dashboard for students focusing on the four core skills: Listening, Reading, Writing, and Speaking.
